@@ -53,6 +53,10 @@ app.use((err, req, res, next) => {
 
 app.use('/FUSE', router);
 
+// List all endpoints of the app
+// const listRoutes = require('express-list-routes');
+// listRoutes(router);
+
 start();
 
 async function start() {
