@@ -3,6 +3,7 @@ const helmet = require("helmet");
 const cors = require('cors');
 
 const userRoutes = require("./routes/userRoutes");
+const gateRoutes = require("./routes/gateRoutes");
 const authRouter = require("./routes/authRoutes");
 const beneficiarieRouter = require("./routes/beneficiarieRoutes");
 const merchantRoutes = require("./routes/merchantRoutes");
@@ -11,46 +12,58 @@ const cardRoutes = require("./routes/cardRoutes");
 const transactionRoutes = require("./routes/transactionRoutes");
 const keyRoutes = require("./routes/keyRoutes");
 const billRoutes = require("./routes/billRoutes");
-//const encry = require("./middleware/encryptionMiddleware");
-const {authenticateJWT} = require('./middleware/authMiddleware');
 
-
-PORT = process.env.PORT | 3030;
+const { authenticateJWT } = require('./middleware/authMiddleware');
+const { handleError } = require('./middleware/errorMiddleware');
 
 const app = express();
 
-const corsOptions = {
-	origin: '*', 
-	optionsSuccessStatus: 200 
-}
-
-app.use(cors(corsOptions));
+app.use(cors());
+app.use(helmet());
 
 app.use(express.static("public"));
 app.use(express.json());
-app.use(helmet());
 
+const router = express.Router();
 
-app.get("/", async (req, res) => {
-	res.json({ msg: "Hello World, I am alive!" });
+router.get("/", async (req, res) => {
+    res.json({ msg: "Hello World, I am alive!" });
 });
 
-// for payment gateway
-app.use("/merchant", merchantRoutes);
+router.use("/gate", gateRoutes);
+router.use("/key", keyRoutes);
+router.use("/auth", authRouter);
 
-app.use("/key", keyRoutes);
+router.use(authenticateJWT);
 
-app.use("/auth", authRouter);
+router.use("/user", userRoutes);
+router.use("/merchant", merchantRoutes);
+router.use("/beneficiarie", beneficiarieRouter);
+router.use("/account", accountRoutes);
+router.use("/card", cardRoutes);
+router.use("/transaction", transactionRoutes);
+router.use("/bill", billRoutes);
 
-app.use(authenticateJWT);
-
-app.use("/user", userRoutes);
-app.use("/beneficiarie", beneficiarieRouter);
-app.use("/account", accountRoutes);
-app.use("/card", cardRoutes);
-app.use("/transaction", transactionRoutes);
-app.use("/bill", billRoutes);
-
-app.listen(PORT, () => {
-	console.log("Server listening on port ", PORT);
+app.use((err, req, res, next) => {
+  handleError(err, res, req);
 });
+
+app.use('/FUSE', router);
+
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
+try {
+  await prisma.$connect();
+  console.log('Successfully connected to the database');
+
+  PORT = process.env.PORT | 3030;
+  app.listen(PORT, () => {
+    console.log("Server listening on port ", PORT);
+  });
+} catch (error) {
+  console.error('Unable to connect to the database:', error);
+} finally {
+  await prisma.$disconnect();
+}
+
