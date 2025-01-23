@@ -9,7 +9,7 @@ const {
     createDWSchema, 
     payBillSchema, 
     updateTransactionSchema 
-} = require('../validationSchemas');
+} = require('./validationSchemas');
 const encry = require('../middleware/encryptionMiddleware')
 const encryM = require('../middleware/mobileEncryptionMiddleware')
 

@@ -1,5 +1,5 @@
 const { PrismaClient, Prisma, Role } = require('@prisma/client');
-const { logServerError } = require('./logController');
+const { logServerError } = require('../controllers/logController');
 const prisma = new PrismaClient();
 
 async function handleError(error, res, req) {
@@ -23,8 +23,6 @@ async function handleError(error, res, req) {
     console.log(error);
     res.status(500).json({ error: 'An unknown error occurred' });
   }
-
-
   await logServerError(req, res, error_message);
 }
 

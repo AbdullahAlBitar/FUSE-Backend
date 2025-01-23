@@ -4,7 +4,7 @@ const encry = require("../middleware/encryptionMiddleware")
 const encryM = require('../middleware/mobileEncryptionMiddleware')
 const encryR = require('../middleware/regMobileEncryptionMiddleware');
 const { validateRequest } = require('../middleware/validationMiddleware');
-const { keySchema } = require('../validationSchemas');
+const { keySchema } = require('./validationSchemas');
 
 // dashboard
 router.post('/dashboard/generate',validateRequest(keySchema), encry.genKeysDashboard);

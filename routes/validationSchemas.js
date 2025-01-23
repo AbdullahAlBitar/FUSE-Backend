@@ -65,11 +65,11 @@ const createAccountSchema = Joi.object({
 });
 
 const updateAccountSchema = Joi.object({
-  userId: Joi.number().integer(),
-  balance: Joi.number(),
-  type: Joi.string().valid(...Object.values(AccountType)),
-  status: Joi.string().valid(...Object.values(AccountStatus)),
-  name: Joi.string(),
+  userId: Joi.number().integer().required(),
+  balance: Joi.number().required(),
+  type: Joi.string().valid(...Object.values(AccountType)).required(),
+  status: Joi.string().valid(...Object.values(AccountStatus)).required(),
+  name: Joi.string().required(),
 });
 
 // Beneficiary

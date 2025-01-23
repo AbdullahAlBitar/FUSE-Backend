@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const accountController = require('../controllers/accountController');
 const { validateRequest } = require('../middleware/validationMiddleware');
-const { createAccountSchema, updateAccountSchema } = require('../validationSchemas');
+const { createAccountSchema, updateAccountSchema } = require('./validationSchemas');
 const { decryptionMobile } = require('../middleware/mobileEncryptionMiddleware');
 
 
