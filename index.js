@@ -1,3 +1,6 @@
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
 const express = require("express");
 const helmet = require("helmet");
 const cors = require('cors');
@@ -50,20 +53,22 @@ app.use((err, req, res, next) => {
 
 app.use('/FUSE', router);
 
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+start();
 
-try {
-  await prisma.$connect();
-  console.log('Successfully connected to the database');
-
-  PORT = process.env.PORT | 3030;
-  app.listen(PORT, () => {
-    console.log("Server listening on port ", PORT);
-  });
-} catch (error) {
-  console.error('Unable to connect to the database:', error);
-} finally {
-  await prisma.$disconnect();
+async function start() {
+  try {
+    await prisma.$connect();
+    console.log('Successfully connected to the database');
+  
+    PORT = process.env.PORT | 3030;
+    app.listen(PORT, () => {
+      console.log("Server listening on port ", PORT);
+    });
+  } catch (error) {
+    console.error('Unable to connect to the database:', error);
+  } finally {
+    await prisma.$disconnect();
+  }
 }
+
 

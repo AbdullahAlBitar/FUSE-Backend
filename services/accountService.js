@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const validate = require('../controllers/validateController').default;
 
 async function findAll() {
   return await prisma.accounts.findMany({
@@ -14,7 +15,9 @@ async function findAll() {
 }
 
 async function findById(id) {
-  return await prisma.accounts.findUnique({
+  id = await validate.isNumber(id, 'id');
+
+  const account =  await prisma.accounts.findUnique({
     where: {
       id: id,
     },
@@ -32,10 +35,20 @@ async function findById(id) {
       }
     }
   });
+
+  if (!account) {
+    let error = new Error("Not Found");
+    error.meta = { code: "404", error: 'Account not found' };
+    throw error;
+  }
+
+  return account;
 }
 
 async function findByUserId(id){
-  return await prisma.accounts.findMany({
+  id = await validate.isNumber(id, 'id');
+
+  const accounts = await prisma.accounts.findMany({
     where: {
       userId: parseInt(id),
     },
@@ -47,20 +60,40 @@ async function findByUserId(id){
       status: true,
     }
   });
+
+  if(!accounts){
+    let error = new Error("Not Found");
+    error.meta = { code: "404", error: 'Accounts not found' };
+    throw error;
+  }
+
+  return accounts;
 }
 
 async function findUserById(accountId) {
-  return await prisma.accounts.findUnique({
+  accountId = await validate.isNumber(accountId, 'Account ID');
+
+  const accountUser =  await prisma.accounts.findUnique({
     where: {
       id: accountId
     },
     include: {
       user: true
     }
-  })
+  });
+
+  if(!accountUser){
+    let error = new Error("Not Found");
+    error.meta = { code: "404", error: 'Accounts not found' };
+    throw error;
+  }
+
+  return accountUser;
 }
 
 async function findCheckingById(userId) {
+  userId = await validate.isNumber(userId, 'User ID');
+
   return await prisma.accounts.findFirst({
     where:{
       user: { id: parseInt(userId) },
@@ -70,6 +103,9 @@ async function findCheckingById(userId) {
 }
 
 async function create(userId, balance, type) {
+  userId = await validate.isNumber(userId, 'User ID');
+  balance = await validate.isNumber(balance, 'Balance');
+
   let newAccountNumber = "";
   let account = null;
   do {
@@ -93,17 +129,23 @@ async function create(userId, balance, type) {
   });
 }
 
-async function updateById(id,  data ) {
-  return await prisma.accounts.update({
+async function updateById(id,  data) {
+  id = await validate.isNumber(id, "id");
+
+  const updatedAccount = await prisma.accounts.update({
     where: {
       id: id
     },
     data
   });
-}
 
-async function disconnect() {
-  await prisma.$disconnect();
+  if (!updatedAccount) {
+    let error = new Error("Not Found");
+    error.meta = { code: "404", error: 'Account not found' };
+    throw error;
+  }
+
+  return updatedAccount;
 }
 
 module.exports = {
@@ -111,7 +153,6 @@ module.exports = {
   findById,
   create,
   updateById,
-  disconnect,
   findByUserId,
   findCheckingById,
   findUserById

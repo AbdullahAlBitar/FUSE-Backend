@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const beneficiarieController = require('../controllers/beneficiarieController');
 const { validateRequest } = require('../middleware/validationMiddleware');
-const { createBeneficiarySchema, updateBeneficiarySchema } = require('../validationSchemas');
+const { createBeneficiarySchema, updateBeneficiarySchema } = require('./validationSchemas');
 
 //router.get('/create', beneficiarieController.create);
 
