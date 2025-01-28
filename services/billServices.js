@@ -1,8 +1,15 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
+const validate = require('../middleware/validationMiddleware').default;
+const merchantService = require('./merchantService');
+const accountService = require('./accountService');
+const cardService = require('./cardService');
+
 
 async function findById(id) {
-	return await prisma.bills.findUnique({
+  id = await validate.checkEmpty(req.params.id, "id");
+
+	const bill = await prisma.bills.findUnique({
 		where: {
 			id: parseInt(id),
 		},
@@ -18,6 +25,13 @@ async function findById(id) {
 			},
 		},
 	});
+
+  if (!bill) {
+    let error = new Error("Not Found");
+    error.meta = { code: "404", error: "Bill not found" };
+    throw error;
+  }
+  return bill;
 }
 
 async function findByMerchantId(id) {
@@ -38,10 +52,27 @@ async function findByMerchantId(id) {
   });
 }
 
-async function create(merchantAccount, amount, details, categoryId) {
+async function create(id, amount, details) {
+  const user = await merchantService.findById(id)
+  const dAccount = await accountService.findCheckingById(id);
+
+  if (!dAccount) {
+    let error = new Error("Not Found");
+    error.meta = { code: "404", error: 'Destination account not found' };
+    throw error;
+  } else if (dAccount.status !== "Active") {
+    let error = new Error("Not Active");
+    error.meta = { code: "409", error: `Destination account is not active (${dAccount.status})` };
+    throw error;
+  } else if (amount <= 0) {
+    let error = new Error("Wrong Amount");
+    error.meta = { code: "409", error: "Amount must be greater than 0" };
+    throw error;
+  }
+
 	const category = await prisma.merchantCategory.findUnique({
 		where: {
-			id: parseInt(categoryId),
+			id: parseInt(user.merchant.categoryId),
 		},
 	});
 
@@ -55,13 +86,34 @@ async function create(merchantAccount, amount, details, categoryId) {
 	});
 }
 
-async function payBill(id, cardId, amount, merchantAccount) {
-  const bill = await prisma.bills.findUnique({
-    where: { id: parseInt(id) }
-  });
+async function payBill(id, cardId, cvv, month, year) {
+  id = parseInt(await validate.checkEmpty(id, "id"))
+  const bill = await findById(id);
+  const card = await cardService.findById(cardId);
+  const expiryDate = new Date(card.expiryDate);
 
   if (!bill) {
-    throw new Error('Bill not found');
+    let error = new Error("Not Found");
+    error.meta = { code: "404", error: 'Bill not found' };
+    throw error;
+  } else if (!card) {
+    let error = new Error("Not Found");
+    error.meta = { code: "404", error: 'Card not found' };
+    throw error;
+  } else if (card.cvv !== cvv, expiryDate.getMonth() + 1 !== parseInt(month), expiryDate.getFullYear() !== parseInt(year)) {
+    let error = new Error("Invalid Card Details");
+    error.meta = { code: "409", error: `Card details are invalid` };
+    throw error;
+  } else if (bill.status !== "Pending") {
+    let error = new Error("Not Pending");
+    error.meta = { code: "409", error: `Bill is not pending (${bill.status})` };
+    throw error;
+  }
+
+  if (card.balance - bill.amount < 0) {
+    let error = new Error("Insufficient Balance");
+    error.meta = { code: "409", error: `Card has insufficient balance` };
+    throw error;
   }
 
   const transaction = await prisma.$transaction([
