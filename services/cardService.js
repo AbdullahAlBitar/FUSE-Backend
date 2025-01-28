@@ -20,36 +20,76 @@ async function findById(id) {
     }
   });
 
-  return await prisma.cards.findUnique({
+  const card = await prisma.cards.findUnique({
     where: { id },
   });
+
+  if (!card) {
+    let error = new Error("Not Found");
+    error.meta = { code: "404", error: "Card not found" };
+    throw error;
+  }
+  return card;
 }
 
 async function findByAccountId(id) {
-  return await prisma.cards.findMany({
+  const cards = await prisma.cards.findMany({
     where: { accountNumber: id },
     orderBy: [{ expiryDate: "desc" }],
   });
+
+  if (!cards) {
+    let error = new Error("Not Found");
+    error.meta = { code: "404", error: "Cards not found" };
+    throw error;
+  }
+  return cards;
 }
 
 async function findByUserId(id) {
-  return await prisma.cards.findMany({
+  const cards = await prisma.cards.findMany({
     where: {
       account: {
         userId: id
       }
     }
   });
+
+  if (!cards) {
+    let error = new Error("Not Found");
+    error.meta = { code: "404", error: "Cards not found" };
+    throw error;
+  }
+  return cards;
 }
 
-async function create(cardName, accountNumber, PIN, balance) {
+async function create(userId, cardName, accountNumber, PIN, balance) {
+  const checkingAccount = await accountService.findCheckingById(
+    userId
+  );
+
+  if (!checkingAccount) {
+    let error = new Error("Not Found");
+    error.meta = { code: "404", error: "No User Checking Account" };
+    throw error;
+  }
+
+  if (checkingAccount.balance - balance < 0) {
+    let error = new Error("Insufficient Balance");
+    error.meta = {
+      code: "409",
+      error: "Checking Account has insufficient balance",
+    };
+    throw error;
+  }
+
   let id, checkID;
   do {
     let randomNumber = Math.floor(Math.random() * 9000000000000000) + 1000000000000000;
     id = randomNumber.toString();
 
     checkID = await prisma.cards.findUnique({
-      where: {id}
+      where: { id }
     });
   } while (checkID);
 
@@ -100,7 +140,7 @@ async function updateBalance(id, amount, type) {
     prisma.cards.update({
       where: { id },
       data: {
-        balance: type === "Deposit"? { increment: amount } : { decrement: amount }
+        balance: type === "Deposit" ? { increment: amount } : { decrement: amount }
       }
     })
   )
@@ -111,7 +151,7 @@ async function updateBalance(id, amount, type) {
         id: card.accountNumber
       },
       data: {
-        balance: type === "Deposit"? { decrement: amount } : { increment: amount }
+        balance: type === "Deposit" ? { decrement: amount } : { increment: amount }
       }
     })
   )
@@ -124,7 +164,7 @@ async function deleteCard(id, userId) {
     where: { id },
   });
 
-  if(!card) console.log("cant find card");
+  if (!card) console.log("cant find card");
 
   let transaction = [];
 
@@ -138,10 +178,10 @@ async function deleteCard(id, userId) {
       }
     })
   )
-  
+
   transaction.push(
     prisma.cards.delete({
-      where: { id , account: { user : { id: userId } } }
+      where: { id, account: { user: { id: userId } } }
     })
   )
 

@@ -1,116 +1,78 @@
 const cardService = require("../services/cardService");
 const accountService = require("../services/accountService");
-const { handleError } = require("./errorController");
-const validate = require("./validateController");
-const {
-  makePayload,
-} = require("../middleware/encryptionMiddleware");
+const validate = require("./validateController").default;
+const { makePayload } = require("../middleware/encryptionMiddleware");
 const { makePayloadMobile } = require('../middleware/mobileEncryptionMiddleware');
-const { logServer } = require('./logController'); // Import the logServer function
+const { logServer } = require('./logController');
 
-async function index(req, res) {
+async function index(req, res, next) {
   try {
     const allCards = await cardService.findAll();
-    await logServer(req, res); // Call the logServer function before returning the response
+    await logServer(req, res);
     return res.json(await makePayload(allCards, req.user.id));
   } catch (error) {
-    await handleError(error, res, req);
+    next(error);
   }
 }
 
-async function show(req, res) {
+async function show(req, res, next) {
   try {
     const id = await validate.checkEmpty(req.params.id, "id");
 
     const card = await cardService.findById(id);
 
-    if (!card) {
-      let error = new Error("Not Found");
-      error.meta = { code: "404", error: "Card not found" };
-      throw error;
-    }
-    await logServer(req, res); // Call the logServer function before returning the response
+    await logServer(req, res);
     return res.json(await makePayloadMobile(card, req.user.id));
   } catch (error) {
-    await handleError(error, res, req);
+    next(error);
   }
 }
 
-async function showByAccountId(req, res) {
+async function showByAccountId(req, res, next) {
   try {
     const id = await validate.checkEmpty(req.params.id, "id");
 
     const cards = await cardService.findByAccountId(id);
 
-    if (!cards) {
-      let error = new Error("Not Found");
-      error.meta = { code: "404", error: "Cards not found" };
-      throw error;
-    }
-
-    await logServer(req, res); // Call the logServer function before returning the response
+    await logServer(req, res);
     return res.json(await makePayloadMobile(cards, req.user.id));
   } catch (error) {
-    await handleError(error, res, req);
+    next(error);
   }
 }
 
-async function showByUserId(req, res) {
+async function showByUserId(req, res, next) {
   try {
     const cards = await cardService.findByUserId(req.user.id);
 
-    if (!cards) {
-      let error = new Error("Not Found");
-      error.meta = { code: "404", error: "Cards not found" };
-      throw error;
-    }
-
-    await logServer(req, res); // Call the logServer function before returning the response
+    await logServer(req, res);
     return res.json(await makePayloadMobile(cards, req.user.id));
   } catch (error) {
-    await handleError(error, res, req);
+    next(error);
   }
 }
 
-async function store(req, res) {
+async function store(req, res, next) {
   try {
+    const id = await validate.checkEmpty(req.params.id, "id");
     const { cardName, balance, PIN } = req.body;
 
-    const checkingAccount = await accountService.findCheckingById(
-      req.user.id
-    );
-
-    if (!checkingAccount) {
-      let error = new Error("Not Found");
-      error.meta = { code: "404", error: "No User Checking Account" };
-      throw error;
-    }
-
-    if (checkingAccount.balance - balance < 0) {
-      let error = new Error("Insufficient Balance");
-      error.meta = {
-        code: "409",
-        error: "Checking Account has insufficient balance",
-      };
-      throw error;
-    }
-
     const newCard = await cardService.create(
+      id,
       cardName,
       checkingAccount.id,
       PIN,
       balance
     );
 
-    await logServer(req, res); // Call the logServer function before returning the response
+    await logServer(req, res);
     return res.json(await makePayloadMobile(newCard[0], req.user.id));
   } catch (error) {
-    console.log(error);
-    await handleError(error, res, req);
+    next(error);
   }
 }
 
-async function update(req, res) {
+async function update(req, res, next) {
   try {
     const id = await validate.checkEmpty(req.params.id, "id");
 
@@ -122,23 +84,23 @@ async function update(req, res) {
       expiryDate,
       physical,
     });
-    await logServer(req, res); // Call the logServer function before returning the response
+    await logServer(req, res);
     res.json(await makePayload(updatedCard, req.user.id));
   } catch (error) {
-    await handleError(error, res, req);
+    next(error);
   }
 }
 
-async function updateBalance(req, res) {
+async function updateBalance(req, res, next) {
   try {
     const id = await validate.checkEmpty(req.params.id, "id");
     const { amount, type } = req.body;
 
-    if(type === "Deposit") {
+    if (type === "Deposit") {
       const checkingAccount = await accountService.findCheckingById(
         req.user.id
       );
-      if(checkingAccount.balance - amount < 0) {
+      if (checkingAccount.balance - amount < 0) {
         let error = new Error("Insufficient Balance");
         error.meta = {
           code: "409",
@@ -148,7 +110,7 @@ async function updateBalance(req, res) {
       }
     } else {
       const card = await cardService.findById(id);
-      if(card.balance - amount < 0) {
+      if (card.balance - amount < 0) {
         let error = new Error("Insufficient Balance");
         error.meta = {
           code: "409",
@@ -169,28 +131,28 @@ async function updateBalance(req, res) {
       error.meta = { code: "409", error: "Failed to update balance" };
       throw error;
     }
-    await logServer(req, res); // Call the logServer function before returning the response
+    await logServer(req, res);
     return res.json(await makePayloadMobile(updatedCard[0], req.user.id));
 
   } catch (error) {
-    await handleError(error, res, req);
+    next(error);
   }
 }
 
-async function updatePIN(req, res) {
+async function updatePIN(req, res, next) {
   try {
     const id = await validate.checkEmpty(req.params.id, "id");
     const { PIN } = req.body;
 
     const updatedCard = await cardService.updateById(id, { PIN });
-    await logServer(req, res); // Call the logServer function before returning the response
+    await logServer(req, res);
     res.json(await makePayloadMobile(updatedCard, req.user.id));
   } catch (error) {
-    await handleError(error, res, req);
+    next(error);
   }
 }
 
-async function destroy(req, res) {
+async function destroy(req, res, next) {
   try {
     const id = await validate.checkEmpty(req.params.id, "id");
 
@@ -201,7 +163,7 @@ async function destroy(req, res) {
       error.meta = { code: "404", error: "Card not found" };
       throw error;
     }
-    await logServer(req, res); // Call the logServer function before returning the response
+    await logServer(req, res);
     return res.json(
       await makePayloadMobile(
         { message: "Card deleted successfully" },
@@ -209,7 +171,7 @@ async function destroy(req, res) {
       )
     );
   } catch (error) {
-    await handleError(error, res, req);
+    next(error);
   }
 }
 
