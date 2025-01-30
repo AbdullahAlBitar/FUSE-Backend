@@ -28,7 +28,14 @@ async function findAll() {
 }
 
 async function findById(id) {
-  return await prisma.transactions.findUnique({ where: { id } });
+  id = parseInt(await validate.isNumber(id, "id"));
+  const transaction = await prisma.transactions.findUnique({ where: { id } });
+  if (!transaction) {
+    let error = new Error("Not Found");
+    error.meta = { code: "404", error: 'Transaction not found' };
+    throw error;
+  }
+  return transaction;
 }
 
 async function findAllTopUp() {
@@ -75,7 +82,7 @@ async function findAllFromTo(sourceRole, destinationRole) {
   sourceRole = sourceRole.charAt(0).toUpperCase() + sourceRole.slice(1);
   destinationRole = destinationRole.charAt(0).toUpperCase() + destinationRole.slice(1);
 
-  return await prisma.transactions.findMany({
+  const transactions = await prisma.transactions.findMany({
     where: {
       sAccount: {
         user: {
@@ -110,6 +117,12 @@ async function findAllFromTo(sourceRole, destinationRole) {
 
     }
   });
+  if (!transactions) {
+    let error = new Error("Not Found");
+    error.meta = { code: "404", error: 'Transaction not found' };
+    throw error;
+  }
+  return transactions;
 }
 
 async function create(type, sourceAccount, destinationAccount, amount) {
@@ -322,6 +335,12 @@ async function changeAmount(id, newAmount, oldAmount) {
 
 async function deleteById(id) {
   const transaction = await prisma.transactions.findUnique({ where: { id } });
+  if (!transaction) {
+    let error = new Error("Not Found");
+    error.meta = { code: "404", error: "Transaction not found" };
+    throw error;
+  }
+
   const transactions = [
     prisma.accounts.update({
       where: { id: transaction.sourceAccount },

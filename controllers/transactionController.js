@@ -2,93 +2,69 @@ const transactionService = require('../services/transactionService');
 const cashTransactionService = require('../services/cashTransactionService');
 const merchantService = require('../services/merchantService');
 const accountService = require('../services/accountService');
-const { handleError } = require('./errorController');
-const validate = require('./validateController');
+const { handleError } = require('../middleware/errorMiddleware');
+const validate = require('./validateController').default;
 const { makePayload } = require('../middleware/encryptionMiddleware');
 const { makePayloadMobile } = require('../middleware/mobileEncryptionMiddleware');
-const { logServer } = require('./logController'); // Import the logServer function
+const { logServer } = require('./logController');
 
-async function index(req, res) {
+async function index(req, res, next) {
   try {
     const allTransactions = await transactionService.findAll();
     console.log("sending all transactions");
-    await logServer(req, res); // Call the logServer function before returning the response
+    await logServer(req, res);
     return res.json(await makePayload(allTransactions, req.user.id));
   } catch (error) {
-    await handleError(error, res, req);
+    next(error);
   }
 }
 
-async function show(req, res) {
+async function show(req, res, next) {
   try {
-    const id = parseInt(await validate.isNumber(req.params.id, "id"));
+    const id = req.params.id;
     const transaction = await transactionService.findById(id);
 
-    if (!transaction) {
-      let error = new Error("Not Found");
-      error.meta = { code: "404", error: 'Transaction not found' };
-      throw error;
-    }
-    await logServer(req, res); // Call the logServer function before returning the response
+    await logServer(req, res);
     return res.json(await makePayload(transaction, req.user.id));
   } catch (error) {
-    await handleError(error, res, req);
+    next(error);
   }
 }
 
-async function showTransactionsFromTo(req, res) {
+async function showTransactionsFromTo(req, res, next) {
   try {
     const { sourceRole, destinationRole } = req.body;
     const transactions = await transactionService.findAllFromTo(sourceRole, destinationRole);
 
-    if (!transactions) {
-      let error = new Error("Not Found");
-      error.meta = { code: "404", error: 'Transaction not found' };
-      throw error;
-    }
     console.log("transactions from ", sourceRole, " to ", destinationRole, " are going to be returned");
-    await logServer(req, res); // Call the logServer function before returning the response
+    await logServer(req, res);
     return res.json(await makePayload(transactions, req.user.id));
 
   } catch (error) {
-    await handleError(error, res, req);
+    next(error);
   }
 }
 
-async function showTopUp(req, res) {
+async function showTopUp(req, res, next) {
   try {
     transactions = await cashTransactionService.findAllTopUp();
-    if (!transactions) {
-      let error = new Error("Not Found");
-      error.meta = { code: "404", error: 'TopUp not found/Empty' };
-      throw error;
-    }
+
     console.log("TopUp is ready to be sent");
-    await logServer(req, res); // Call the logServer function before returning the response
+    await logServer(req, res);
     return res.status(201).json(await makePayload(transactions, req.user.id));
   } catch (error) {
     await handleError(error, res)
   }
 }
 
-async function storeTransfer(req, res) {
+async function storeTransfer(req, res, next) {
   try {
     const { type, destinationAccount, sourceAccount, amount, details } = req.body;
 
     const dAccount = await accountService.findById(destinationAccount);
     let sAccount = await accountService.findCheckingById(req.user.id);
-    if( sourceAccount ){
+    if (sourceAccount) {
       sAccount = await accountService.findById(sourceAccount);
-    }
-
-    if (!dAccount) {
-      let error = new Error("Not Found");
-      error.meta = { code: "404", error: 'Destination account not found' };
-      throw error;
-    } else if (!sAccount) {
-      let error = new Error("Not Found");
-      error.meta = { code: "404", error: 'Source account not found' };
-      throw error;
     }
 
     const transaction = await transactionService.create(type, sAccount.id, dAccount.id, amount);
@@ -111,29 +87,19 @@ async function storeTransfer(req, res) {
     }
 
     console.log(type, " is done form", sAccount.id, " to ", dAccount.id, " with amount", amount);
-    await logServer(req, res); // Call the logServer function before returning the response
+    await logServer(req, res);
     return res.status(201).json(await makePayloadMobile({ transactions }, req.user.id));
   } catch (error) {
-    await handleError(error, res, req);
+    next(error);
   }
 }
 
-async function storeDeposit(req, res) {
+async function storeDeposit(req, res, next) {
   try {
     const { account, amount } = req.body;
 
     const Account = await accountService.findById(account);
     const supervisorId = req.user.id;
-
-    if (!Account) {
-      let error = new Error("Not Found");
-      error.meta = { code: "404", error: 'Account account not found' };
-      throw error;
-    } else if (amount <= 0) {
-      let error = new Error("Wrong Amount");
-      error.meta = { code: "409", error: "Amount must be greater than 0" };
-      throw error;
-    }
 
     let transaction = await cashTransactionService.create("Deposit", account, amount, supervisorId);
 
@@ -147,29 +113,21 @@ async function storeDeposit(req, res) {
 
     transaction = await cashTransactionService.updateById(transaction.id, { status: "Completed" });
 
-    await logServer(req, res); // Call the logServer function before returning the response
+    await logServer(req, res);
     return res.status(201).json(await makePayload({ transaction }, req.user.id));
   } catch (error) {
-    await handleError(error, res, req);
+    next(error);
   }
 }
 
-async function storeWithdraw(req, res) {
+async function storeWithdraw(req, res, next) {
   try {
     const { account, amount } = req.body;
 
     const Account = await accountService.findById(account);
     const supervisorId = req.user.id;
 
-    if (!Account) {
-      let error = new Error("Not Found");
-      error.meta = { code: "404", error: 'Account account not found' };
-      throw error;
-    } else if (amount <= 0) {
-      let error = new Error("Wrong Amount");
-      error.meta = { code: "409", error: "Amount must be greater than 0" };
-      throw error;
-    } else if ((Account.balance - amount) < 0) {
+    if ((Account.balance - amount) < 0) {
       let error = new Error("Insufficient Balance");
       error.meta = { code: "409", error: "Account has insufficient balance" };
       throw error;
@@ -187,89 +145,92 @@ async function storeWithdraw(req, res) {
 
     transaction = await cashTransactionService.updateById(transaction.id, { status: "Completed" });
 
-    await logServer(req, res); // Call the logServer function before returning the response
+    await logServer(req, res);
     return res.status(201).json(await makePayload({ transaction }, req.user.id));
   } catch (error) {
-    await handleError(error, res, req);
+    next(error);
   }
 }
 
-async function update(req, res) {
-  const id = parseInt(await validate.isNumber(req.params.id, "id"));
-  const { sourceAccount, destinationAccount, amount } = req.body;
+async function update(req, res, next) {
+  try {
+    const id = parseInt(await validate.isNumber(req.params.id, "id"));
+    const { sourceAccount, destinationAccount, amount } = req.body;
 
-  const oldTransaction = await transactionService.findById(id);
-  let result = "";
+    const oldTransaction = await transactionService.findById(id);
+    let result = "";
 
-  const oldSourceAccount = await accountService.findById(oldTransaction.sourceAccount);
-  const oldDestinationAccount = await accountService.findById(oldTransaction.destinationAccount);
+    const oldSourceAccount = await accountService.findById(oldTransaction.sourceAccount);
+    const oldDestinationAccount = await accountService.findById(oldTransaction.destinationAccount);
 
-  if (sourceAccount != oldTransaction.sourceAccount) {
-    const newSourceAccount = await accountService.findById(sourceAccount);
+    if (sourceAccount != oldTransaction.sourceAccount) {
+      const newSourceAccount = await accountService.findById(sourceAccount);
 
-    if (newSourceAccount.balance - amount < 0) {
-      let error = new Error("Insufficient Balance");
-      error.meta = { code: "409", error: "New Source has insufficient balance" };
-      throw error;
+      if (newSourceAccount.balance - amount < 0) {
+        let error = new Error("Insufficient Balance");
+        error.meta = { code: "409", error: "New Source has insufficient balance" };
+        throw error;
+      }
+      const transactions = await transactionService.changeSourceAccount(id, oldSourceAccount, newSourceAccount, oldTransaction.amount, amount);
+      if (transactions) {
+        result += "Source account changed from " + oldSourceAccount.id + " to " + newSourceAccount.id + "\n";
+      }
     }
-    const transactions = await transactionService.changeSourceAccount(id, oldSourceAccount, newSourceAccount, oldTransaction.amount, amount);
-    if (transactions) {
-      result += "Source account changed from " + oldSourceAccount.id + " to " + newSourceAccount.id + "\n";
+
+    if (destinationAccount != oldTransaction.destinationAccount) {
+      const newDestinationAccount = await accountService.findById(destinationAccount);
+
+      if (oldDestinationAccount.balance - oldTransaction.amount < 0) {
+        let error = new Error("Insufficient Balance");
+        error.meta = { code: "409", error: "Old Destination has insufficient balance" };
+        throw error;
+      }
+      const transactions = await transactionService.changeDestinationAccount(id, oldDestinationAccount, newDestinationAccount, oldTransaction.amount, amount);
+      if (transactions) {
+        result += "Destination account changed from " + oldDestinationAccount.id + " to " + newDestinationAccount.id + "\n";
+      }
     }
+
+    if (result === "" && amount != oldTransaction.amount) {
+      if (oldSourceAccount.balance - (amount - oldTransaction.amount) < 0) {
+        let error = new Error("Insufficient Balance");
+        error.meta = { code: "409", error: "Source Account has insufficient balance" };
+        throw error;
+      }
+
+      const transactions = await transactionService.changeAmount(id, amount, oldTransaction.amount);
+      result += "Amount changed from " + oldTransaction.amount + " to " + amount + "\n";
+    }
+    if (result === "") { result = "Nothing changed" }
+    //console.log(result);
+
+    await logServer(req, res);
+    return res.status(200).json(await makePayload(result, req.user.id));
+  } catch (error) {
+    next(error);
   }
+}
 
-  if (destinationAccount != oldTransaction.destinationAccount) {
-    const newDestinationAccount = await accountService.findById(destinationAccount);
-
-    if (oldDestinationAccount.balance - oldTransaction.amount < 0) {
-      let error = new Error("Insufficient Balance");
-      error.meta = { code: "409", error: "Old Destination has insufficient balance" };
-      throw error;
-    }
-    const transactions = await transactionService.changeDestinationAccount(id, oldDestinationAccount, newDestinationAccount, oldTransaction.amount, amount);
-    if (transactions) {
-      result += "Destination account changed from " + oldDestinationAccount.id + " to " + newDestinationAccount.id + "\n";
-    }
-  }
-
-  if (result === "" && amount != oldTransaction.amount) {
-    if (oldSourceAccount.balance - (amount - oldTransaction.amount) < 0) {
-      let error = new Error("Insufficient Balance");
-      error.meta = { code: "409", error: "Source Account has insufficient balance" };
-      throw error;
-    }
-
-    const transactions = await transactionService.changeAmount(id, amount, oldTransaction.amount);
-    result += "Amount changed from " + oldTransaction.amount + " to " + amount + "\n";
-  }
-  if (result === "") { result = "Nothing changed" }
-  //console.log(result);
-
-  await logServer(req, res); // Call the logServer function before returning the response
-  return res.status(200).json(await makePayload(result, req.user.id));
+async function patchDeposit(req, res, next) {
 
 }
 
-async function patchDeposit(req, res) {
+async function patchWithdraw(req, res, next) {
 
 }
 
-async function patchWithdraw(req, res) {
+async function destroy(req, res, next) {
+  try {
+    const id = parseInt(await validate.isNumber(req.params.id, "id"));
+    const oldTransaction = await transactionService.deleteById(id);
 
-}
 
-async function destroy(req, res) {
-  const id = parseInt(await validate.isNumber(req.params.id, "id"));
-  const oldTransaction = await transactionService.deleteById(id);
-
-  if (!oldTransaction) {
-    let error = new Error("Not Found");
-    error.meta = { code: "404", error: "Transaction not found" };
-    throw error;
-  } else {
-    await logServer(req, res); // Call the logServer function before returning the response
+    await logServer(req, res);
     return res.status(200).json(await makePayload("Transaction deleted", req.user.id));
+  } catch (error) {
+    next(error);
   }
+
 }
 
 module.exports = {
