@@ -20,7 +20,7 @@ async function findAll() {
 }
 
 async function findById(id) {
-  return await prisma.users.findUnique({
+  const user = await prisma.users.findUnique({
     where: {
       id,
       status: { not: "Deleted" }
@@ -35,10 +35,17 @@ async function findById(id) {
       status: true
     }
   });
+  
+  if (!user) {
+    let error = new Error("Not Found");
+    error.meta = { code: "404", error: 'User not found' };
+    throw error;
+  }
+  return user;
 }
 
 async function findCustomer(userId) {
-  return await prisma.users.findFirst({
+  const user = await prisma.users.findFirst({
     where: {
       customer: {
         userId: parseInt(userId)
@@ -48,11 +55,18 @@ async function findCustomer(userId) {
       customer: true
     }
   });
+  if(!user){
+    let error = new Error("Not Found");
+    error.meta = { code: "404", error: 'Customer not found/Not customer' };
+    throw error;
+  }
+  return user;
 }
 
 async function updateUser(id,  data ) {
+  id = parseInt(await validate.isNumber(id, "id"));
   if (data.birth) data.birth = (new Date(data.birth)).toISOString();
-  return await prisma.users.update({
+  const user =  await prisma.users.update({
     where: {
       id
     },
@@ -66,9 +80,17 @@ async function updateUser(id,  data ) {
       role: true
     }
   });
+  if (!user) {
+    let error = new Error("Not Found");
+    error.meta = { code: "404", error: 'User not found' };
+    throw error;
+  }
+  return user;
 }
 
 async function deleteUser(id) {
+  id = parseInt(await validate.isNumber(id, "id"));
+
   return await prisma.users.update({
     where: {
       id
@@ -80,6 +102,8 @@ async function deleteUser(id) {
 }
 
 async function deleteUserFromDB(id) {
+  id = parseInt(await validate.isNumber(id, "id"));
+
   await prisma.accounts.deleteMany({
     where: {
       userId : id
