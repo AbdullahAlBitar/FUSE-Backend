@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const validate = require('./validateController').default;
 
 const controllerRole = "Merchant";
 
@@ -24,6 +25,8 @@ async function findAll() {
 }
 
 async function findById(id) {
+  
+  id = parseInt(await validate.isNumber(id,'id'));
   const merchant = await prisma.users.findUnique({
     where: {
       id: parseInt(id),
@@ -56,8 +59,9 @@ async function findById(id) {
 }
 
 async function updateById(id, data) {
+  id = parseInt(await validate.isNumber(id,'id'));
   if (data.birth) data.birth = new Date(data.birth).toISOString();
-  return await prisma.users.update({
+  const merchant = await prisma.users.update({
     where: {
       id,
       role: controllerRole
@@ -78,10 +82,18 @@ async function updateById(id, data) {
       }
     }
   });
+  if (!merchant) {
+    let error = new Error("Not Found");
+    error.meta = { code: "404", error: 'Merchant account not found' };
+    throw error;
+  }
+  return merchant;
 }
 
 async function deleteMerchant(id) {
-  return await prisma.users.update({
+  id = parseInt(await validate.isNumber(id,'id'));
+
+  const deletedMerchant = await prisma.users.update({
     where: {
       id,
       role: controllerRole,
@@ -90,6 +102,13 @@ async function deleteMerchant(id) {
       status: "Deleted"
     }
   });
+
+  if (!deletedMerchant) {
+    let error = new Error("Not Found");
+    error.meta = { code: "404", error: 'Merchant account not found' };
+    throw error;
+  }
+  return deletedMerchant;
 }
 
 async function create(userId, categoryName, workPermit) {
@@ -106,6 +125,7 @@ async function create(userId, categoryName, workPermit) {
       workPermit
     }
   });
+
 }
 
 

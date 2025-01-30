@@ -1,5 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const bcrypt = require('bcrypt');
+
 
 async function findAll() {
   return await prisma.users.findMany({
@@ -92,6 +94,9 @@ async function deleteUserFromDB(id) {
 }
 
 async function create(name, role, email, phone, birth, password) {
+  const salt = await bcrypt.genSalt();
+  password = await bcrypt.hash(password, salt);
+
   return await prisma.users.create({
     data: { name, role, email, phone, birth: (new Date(birth)).toISOString(), password },
     select: {
@@ -327,7 +332,6 @@ async function findExpenses(userId) {
 
   return expenses;
 }
-
 
 module.exports = {
   findAll,

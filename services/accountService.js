@@ -94,12 +94,20 @@ async function findUserById(accountId) {
 async function findCheckingById(userId) {
   userId = await validate.isNumber(userId, 'User ID');
 
-  return await prisma.accounts.findFirst({
+  const account = await prisma.accounts.findFirst({
     where:{
       user: { id: parseInt(userId) },
       type: "Checking"
     }
   });
+
+  if (!account) {
+    let error = new Error("Not Found");
+    error.meta = { code: "404", error: 'Account not found' };
+    throw error;
+  }
+
+  return account;
 }
 
 async function create(userId, balance, type) {
