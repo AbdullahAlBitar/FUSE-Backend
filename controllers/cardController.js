@@ -2,14 +2,13 @@ const cardService = require("../services/cardService");
 const accountService = require("../services/accountService");
 const validate = require("./validateController").default;
 const { makePayload } = require("../middleware/encryptionMiddleware");
-const { makePayloadMobile } = require('../middleware/mobileEncryptionMiddleware');
 const { logServer } = require('./logController');
 
 async function index(req, res, next) {
   try {
     const allCards = await cardService.findAll();
     await logServer(req, res);
-    return res.json(await makePayload(allCards, req.user.id));
+    return res.json({allCards});
   } catch (error) {
     next(error);
   }
@@ -22,7 +21,7 @@ async function show(req, res, next) {
     const card = await cardService.findById(id);
 
     await logServer(req, res);
-    return res.json(await makePayloadMobile(card, req.user.id));
+    return res.json({card});
   } catch (error) {
     next(error);
   }
@@ -35,7 +34,7 @@ async function showByAccountId(req, res, next) {
     const cards = await cardService.findByAccountId(id);
 
     await logServer(req, res);
-    return res.json(await makePayloadMobile(cards, req.user.id));
+    return res.json({cards});
   } catch (error) {
     next(error);
   }
@@ -46,7 +45,7 @@ async function showByUserId(req, res, next) {
     const cards = await cardService.findByUserId(req.user.id);
 
     await logServer(req, res);
-    return res.json(await makePayloadMobile(cards, req.user.id));
+    return res.json({cards});
   } catch (error) {
     next(error);
   }
@@ -66,7 +65,7 @@ async function store(req, res, next) {
     );
 
     await logServer(req, res);
-    return res.json(await makePayloadMobile(newCard[0], req.user.id));
+    return res.json({newcard :newCard[0]});
   } catch (error) {
     next(error);
   }
@@ -85,7 +84,7 @@ async function update(req, res, next) {
       physical,
     });
     await logServer(req, res);
-    res.json(await makePayload(updatedCard, req.user.id));
+    res.json({updatedCard});
   } catch (error) {
     next(error);
   }
@@ -132,7 +131,7 @@ async function updateBalance(req, res, next) {
       throw error;
     }
     await logServer(req, res);
-    return res.json(await makePayloadMobile(updatedCard[0], req.user.id));
+    return res.json({updatedCard : updatedCard[0]});
 
   } catch (error) {
     next(error);
@@ -146,7 +145,7 @@ async function updatePIN(req, res, next) {
 
     const updatedCard = await cardService.updateById(id, { PIN });
     await logServer(req, res);
-    res.json(await makePayloadMobile(updatedCard, req.user.id));
+    res.json({updatedCard});
   } catch (error) {
     next(error);
   }
@@ -164,12 +163,7 @@ async function destroy(req, res, next) {
       throw error;
     }
     await logServer(req, res);
-    return res.json(
-      await makePayloadMobile(
-        { message: "Card deleted successfully" },
-        req.user.id
-      )
-    );
+    return res.json({ message: "Card deleted successfully" });
   } catch (error) {
     next(error);
   }

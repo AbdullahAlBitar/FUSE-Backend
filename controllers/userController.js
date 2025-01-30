@@ -1,13 +1,11 @@
 const userService = require('../services/userService');
-const { makePayload } = require('../middleware/encryptionMiddleware');
-const { makePayloadMobile } = require('../middleware/mobileEncryptionMiddleware');
-const { logServer } = require('./logController'); // Import the logServer function
+const { logServer } = require('./logController'); 
 
 async function index(req, res, next) {
   try {
     const allUsers = await userService.findAll();
     await logServer(req, res); 
-    return res.json(await makePayload(allUsers, req.user.id));
+    return res.json({allUsers});
   } catch (error) {
     next(error);
   }
@@ -19,7 +17,7 @@ async function show(req, res, next) {
     const user = await userService.findById(id);
 
     await logServer(req, res); 
-    return res.json(await makePayload(user, req.user.id));
+    return res.json({user});
   } catch (error) {
     next(error);
   }
@@ -32,7 +30,7 @@ async function update(req, res, next) {
 
     const updatedUser = await userService.updateUser(id, name, email, phone, birth, status);
     await logServer(req, res); 
-    return res.status(200).json(await makePayload(updatedUser, req.user.id));
+    return res.status(200).json({updatedUser});
   } catch (error) {
     next(error);
   }
@@ -49,7 +47,7 @@ async function destroy(req, res, next) {
       throw error;
     }
     await logServer(req, res); 
-    return res.json(await makePayload({ message: 'User deleted successfully' }, req.user.id));
+    return res.json({ message: 'User deleted successfully' });
   } catch (error) {
     next(error);
   }
@@ -61,7 +59,7 @@ async function recived(req, res){
   const recivedAmounts = await userService.findRecived(parseInt(userId));
   
   await logServer(req, res);
-  return res.json(await makePayloadMobile({recived: recivedAmounts}, req.user.id));
+  return res.json({recived: recivedAmounts});
 }
 
 async function sent(req, res){
@@ -70,7 +68,7 @@ async function sent(req, res){
   const sentAmounts = await userService.findSent(parseInt(userId));
   
   await logServer(req, res);
-  return res.json(await makePayloadMobile({sent: sentAmounts}, req.user.id));
+  return res.json({sent: sentAmounts});
 }
 
 async function expenses(req, res, next) {
@@ -81,7 +79,7 @@ async function expenses(req, res, next) {
   const userExpenses = await userService.findExpenses(userId);
   
   await logServer(req, res);
-  return res.json(await makePayloadMobile({expenses: userExpenses, monthlyIncome: user.customer.monthlyIncome}, req.user.id));
+  return res.json({expenses: userExpenses, monthlyIncome: user.customer.monthlyIncome});
 }
 
 module.exports = { index, show, update, destroy, recived, sent, expenses };

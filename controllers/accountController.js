@@ -1,14 +1,11 @@
 const accountService = require('../services/accountService');
-const { makePayload } = require('../middleware/encryptionMiddleware');
-const { makePayloadMobile } = require('../middleware/mobileEncryptionMiddleware');
 const { logServer } = require('./logController'); 
-const { makePayloadRegMobile } = require('../middleware/regMobileEncryptionMiddleware');
 
 async function index(req, res, next) {
   try {
     const allAccounts = await accountService.findAll();
     await logServer(req, res);
-    return res.json(await makePayload(allAccounts, req.user.id));
+    return res.json({allAccounts});
   } catch (error) {
     next(error);
   }
@@ -22,7 +19,7 @@ async function show(req, res, next) {
 
     await logServer(req, res);
 
-    return res.json(await makePayloadMobile(account, req.user.id));
+    return res.json({account});
   } catch (error) {
     next(error);
   }
@@ -34,7 +31,7 @@ async function showUserAccounts(req, res, next) {
 
     await logServer(req, res);
 
-    return res.json(await makePayloadMobile(accounts, req.user.id));
+    return res.json({accounts});
 
   } catch (error) {
     next(error);
@@ -47,7 +44,7 @@ async function showUserById(req, res, next) {
 
     await logServer(req, res);
 
-    return res.json(await makePayloadMobile(accountUser, req.user.id));
+    return res.json({accountUser});
   } catch (error) {
     next(error);
   }
@@ -62,7 +59,7 @@ async function store(req, res, next) {
 
     await logServer(req, res);
 
-    return res.json(await makePayloadRegMobile(newAccount, req.user.id));
+    return res.json({newAccount});
   } catch (error) {
     next(error);
   }
@@ -77,7 +74,7 @@ async function update(req, res, next) {
 
     await logServer(req, res);
 
-    return res.json(await makePayload(updatedAccount, req.user.id));
+    return res.json({updatedAccount});
   } catch (error) {
     next(error)
   }
@@ -91,7 +88,7 @@ async function destroy(req, res, next) {
 
     await logServer(req, res);
 
-    return res.json(await makePayload({ message: 'Account deleted successfully' }, req.user.id));
+    return res.json({ message: 'Account deleted successfully' });
   } catch (error) {
     next(error);
   }

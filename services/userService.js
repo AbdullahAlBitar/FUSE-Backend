@@ -135,9 +135,15 @@ async function create(name, role, email, phone, birth, password) {
 }
 
 async function findByEmail(email) {
-  return await prisma.users.findUnique({
+  const user = await prisma.users.findUnique({
     where: { email }
   });
+  if (!user) {
+    let error = new Error("Not Found");
+    error.meta = { code: "404", error: 'User not found' };
+    throw error;
+  }
+  return user;
 }
 
 async function findRecived(userId) {

@@ -1,14 +1,13 @@
 const beneficiarieService = require('../services/beneficiarieService');
 const { handleError } = require('../middleware/errorMiddleware');
 const validate = require('./validateController').default;
-const { makePayload } = require('../middleware/encryptionMiddleware');
 const { logServer } = require('./logController'); // Import the logServer function
 
 async function index(req, res, next) {
   try {
     const allBeneficiaries = await beneficiarieService.findAll();
     await logServer(req, res); 
-    return res.json(await makePayload(allBeneficiaries, req.user.id));
+    return res.json({allBeneficiaries});
   } catch (error) {
     next(error);
   }
@@ -26,7 +25,7 @@ async function show(req, res, next) {
       throw error;
     }
     await logServer(req, res); 
-    return res.json(await makePayload(beneficiaries, req.user.id));
+    return res.json({beneficiaries});
 
   } catch (error) {
     next(error);
@@ -43,16 +42,16 @@ async function store(req, res, next) {
       if (!beneficiaries.accepted && beneficiaries.acceptUser === requstUser) {
         await beneficiarieService.updateById(beneficiaries.id, { accepted: true });
         await logServer(req, res); 
-        return res.status(201).json(await makePayload({ message: 'Beneficiaries true' }, req.user.id));
+        return res.status(201).json({ message: 'Beneficiaries true' });
       } else {
         await logServer(req, res); 
-        return res.status(409).json(await makePayload({ message: 'Requset already sent' }, req.user.id));
+        return res.status(409).json({ message: 'Requset already sent' });
       }
     }
 
     await beneficiarieService.create(requstUser, acceptUser);
     await logServer(req, res); 
-    return res.status(201).json(await makePayload({ message: 'sent' }, req.user.id));
+    return res.status(201).json({ message: 'sent' });
 
   } catch (error) {
     next(error);
@@ -85,7 +84,7 @@ async function destroy(req, res, next) {
       throw error;
     }
     await logServer(req, res); 
-    return res.json(await makePayload({ message: 'Beneficiarie deleted successfully' }, req.user.id));
+    return res.json({ message: 'Beneficiarie deleted successfully' });
 
   } catch (error) {
     next(error);

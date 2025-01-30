@@ -1,7 +1,5 @@
 const billService = require('../services/billServices');
 const cardService = require('../services/cardService');
-const { makePayload } = require('../middleware/encryptionMiddleware');
-const { makePayloadMobile } = require('../middleware/mobileEncryptionMiddleware');
 const { logServer } = require('./logController'); // Import the logServer function
 
 async function show(req, res, next) {
@@ -9,7 +7,7 @@ async function show(req, res, next) {
     const bill = await billService.findById(id);
 
     await logServer(req, res);
-    return res.json(await makePayloadMobile(bill, req.user.id));
+    return res.json({ bill });
   } catch (error) {
     next(error);
   }
@@ -22,7 +20,7 @@ async function store(req, res, next) {
     const bill = await billService.create(req.user.id, amount, details);
 
     await logServer(req, res);
-    res.status(201).json(await makePayloadMobile({ bill }, req.user.id));
+    res.status(201).json({ bill });
   } catch (error) {
     next(error);
   }
@@ -35,7 +33,7 @@ async function pay(req, res, next) {
 
     const payedBill = await billService.payBill(id, cardId, cvv, month, year);
     await logServer(req, res);
-    return res.status(201).json(await makePayloadMobile({ payedBill }, req.user.id));
+    return res.status(201).json({ payedBill });
 
   } catch (error) {
     next(error);
@@ -46,7 +44,7 @@ async function showUnpaid(req, res, next) {
   try {
     const bills = await billService.findByMerchantId(req.user.id);
     await logServer(req, res);
-    return res.json(await makePayloadMobile(bills, req.user.id));
+    return res.json({ bills });
   } catch (error) {
     next(error);
   }

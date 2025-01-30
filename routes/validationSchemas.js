@@ -22,8 +22,9 @@ const MerchantCategories = [
 ];
 
 // key
-const keySchema = Joi.object({
+const setAESKeySchema = Joi.object({
   email: Joi.string().email().required(),
+  encryptedAESKey: Joi.string().required(),
 }).unknown();
 
 // Auth
@@ -196,6 +197,6 @@ module.exports = {
   updatePINSchema,
   updateBalanceSchema,
   payBillSchema,
-  keySchema,
+  setAESKeySchema,
   generateMerchantBill
 };

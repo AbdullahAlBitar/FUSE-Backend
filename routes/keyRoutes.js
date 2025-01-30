@@ -1,20 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const encry = require("../middleware/encryptionMiddleware")
-const encryM = require('../middleware/mobileEncryptionMiddleware')
-const encryR = require('../middleware/regMobileEncryptionMiddleware');
+const keyController = require("../controllers/keyController")
 const { validateRequest } = require('../middleware/validationMiddleware');
-const { keySchema } = require('./validationSchemas');
+const { setAESKeySchema } = require('./validationSchemas');
 
-// dashboard
-router.post('/dashboard/generate',validateRequest(keySchema), encry.genKeysDashboard);
-
-// mobile
-router.post('/publicKey',validateRequest(keySchema), encryM.genPublicKey);
-router.post('/setAESkey',validateRequest(keySchema), encryM.getAESkey);
-
-// mobile register new user
-router.post('/reg/publicKey',validateRequest(keySchema), encryR.genPublicKeyForReg);
-router.post('/reg/setAESkey',validateRequest(keySchema), encryR.getAESkey);
+router.get('/getPublic', keyController.publicKey)
+router.post('/setAESKey', validateRequest(setAESKeySchema), keyController.setAESKey);
 
 module.exports = router;

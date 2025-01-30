@@ -1,14 +1,13 @@
 const merchantService = require('../services/merchantService');
 const billServices = require('../services/billServices');
 const accountService = require('../services/accountService');
-const { makePayload } = require('../middleware/encryptionMiddleware');
 const { logServer } = require('./logController');
 
 async function index(req, res, next) {
   try {
     const allMerchants = await merchantService.findAll();
     await logServer(req, res);
-    return res.json(await makePayload(allMerchants, req.user.id));
+    return res.json({allMerchants});
   } catch (error) {
     next(error);
   }
@@ -21,7 +20,7 @@ async function show(req, res, next) {
     const merchant = await merchantService.findById(id);
 
     await logServer(req, res); 
-    return res.json(await makePayload(merchant, req.user.id));
+    return res.json({merchant});
   } catch (error) {
     next(error);
   }
@@ -36,7 +35,7 @@ async function update(req, res, next) {
 
     const updatedMerchant = await merchantService.updateById(id, { name, email, phone, birth, status, category, workPermit });
     await logServer(req, res); 
-    return res.status(200).json(await makePayload(updatedMerchant, req.user.id));
+    return res.status(200).json({updatedMerchant});
   } catch (error) {
     next(error);
   }
@@ -49,7 +48,7 @@ async function destroy(req, res, next) {
     const deletedMerchant = await merchantService.deleteMerchant(id);
 
     await logServer(req, res); 
-    return res.json(await makePayload({ message: 'Merchant deleted successfully' }, req.user.id));
+    return res.json({ message: 'Merchant deleted successfully' });
   } catch (error) {
     next(error);
   }

@@ -4,8 +4,6 @@ const merchantService = require('../services/merchantService');
 const accountService = require('../services/accountService');
 const { handleError } = require('../middleware/errorMiddleware');
 const validate = require('./validateController').default;
-const { makePayload } = require('../middleware/encryptionMiddleware');
-const { makePayloadMobile } = require('../middleware/mobileEncryptionMiddleware');
 const { logServer } = require('./logController');
 
 async function index(req, res, next) {
@@ -13,7 +11,7 @@ async function index(req, res, next) {
     const allTransactions = await transactionService.findAll();
     console.log("sending all transactions");
     await logServer(req, res);
-    return res.json(await makePayload(allTransactions, req.user.id));
+    return res.json({allTransactions});
   } catch (error) {
     next(error);
   }
@@ -25,7 +23,7 @@ async function show(req, res, next) {
     const transaction = await transactionService.findById(id);
 
     await logServer(req, res);
-    return res.json(await makePayload(transaction, req.user.id));
+    return res.json({transaction});
   } catch (error) {
     next(error);
   }
@@ -38,7 +36,7 @@ async function showTransactionsFromTo(req, res, next) {
 
     console.log("transactions from ", sourceRole, " to ", destinationRole, " are going to be returned");
     await logServer(req, res);
-    return res.json(await makePayload(transactions, req.user.id));
+    return res.json({transactions});
 
   } catch (error) {
     next(error);
@@ -51,7 +49,7 @@ async function showTopUp(req, res, next) {
 
     console.log("TopUp is ready to be sent");
     await logServer(req, res);
-    return res.status(201).json(await makePayload(transactions, req.user.id));
+    return res.status(201).json({transactions});
   } catch (error) {
     await handleError(error, res)
   }
@@ -88,7 +86,7 @@ async function storeTransfer(req, res, next) {
 
     console.log(type, " is done form", sAccount.id, " to ", dAccount.id, " with amount", amount);
     await logServer(req, res);
-    return res.status(201).json(await makePayloadMobile({ transactions }, req.user.id));
+    return res.status(201).json({ transactions });
   } catch (error) {
     next(error);
   }
@@ -114,7 +112,7 @@ async function storeDeposit(req, res, next) {
     transaction = await cashTransactionService.updateById(transaction.id, { status: "Completed" });
 
     await logServer(req, res);
-    return res.status(201).json(await makePayload({ transaction }, req.user.id));
+    return res.status(201).json({ transaction });
   } catch (error) {
     next(error);
   }
@@ -146,7 +144,7 @@ async function storeWithdraw(req, res, next) {
     transaction = await cashTransactionService.updateById(transaction.id, { status: "Completed" });
 
     await logServer(req, res);
-    return res.status(201).json(await makePayload({ transaction }, req.user.id));
+    return res.status(201).json({ transaction });
   } catch (error) {
     next(error);
   }
@@ -205,7 +203,7 @@ async function update(req, res, next) {
     //console.log(result);
 
     await logServer(req, res);
-    return res.status(200).json(await makePayload(result, req.user.id));
+    return res.status(200).json({result});
   } catch (error) {
     next(error);
   }
@@ -226,7 +224,7 @@ async function destroy(req, res, next) {
 
 
     await logServer(req, res);
-    return res.status(200).json(await makePayload("Transaction deleted", req.user.id));
+    return res.status(200).json({status: "Transaction deleted"});
   } catch (error) {
     next(error);
   }

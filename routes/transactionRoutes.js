@@ -10,18 +10,17 @@ const {
     payBillSchema, 
     updateTransactionSchema 
 } = require('./validationSchemas');
-const encry = require('../middleware/encryptionMiddleware')
-const encryM = require('../middleware/mobileEncryptionMiddleware')
+const { decryptRequest, encryptResponse, decryptRSA } = require('../middleware/encryptionMiddleware');
 
 //router.get('/create', transactionController.create);
 
-router.post('/all', transactionController.index);
-router.post("/topUp", encry.decryption, transactionController.showTopUp);
-router.post('/fromTo', encry.decryption, transactionController.showTransactionsFromTo);
-router.post('/cash/deposit', isEmployee, encry.decryption, validateRequest(createDWSchema), transactionController.storeDeposit);
-router.post('/cash/withdraw', isEmployee, encry.decryption, validateRequest(createDWSchema), transactionController.storeWithdraw); 
+router.post('/all', encryptResponse, transactionController.index);
+router.post("/topUp", decryptRequest, encryptResponse, transactionController.showTopUp);
+router.post('/fromTo', decryptRequest, encryptResponse, transactionController.showTransactionsFromTo);
+router.post('/cash/deposit', isEmployee, decryptRequest, encryptResponse, validateRequest(createDWSchema), transactionController.storeDeposit);
+router.post('/cash/withdraw', isEmployee, decryptRequest, encryptResponse, validateRequest(createDWSchema), transactionController.storeWithdraw); 
 
-router.post('/transfer',encryM.decryptionMobile, validateRequest(createTransferSchema), transactionController.storeTransfer);
+router.post('/transfer', decryptRequest, encryptResponse, encryptResponse, validateRequest(createTransferSchema), transactionController.storeTransfer);
 
 router.post('/:id', transactionController.show);
 router.put('/:id', validateRequest(updateTransactionSchema), transactionController.update);
