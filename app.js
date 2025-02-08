@@ -47,11 +47,12 @@ router.use("/card", cardRoutes);
 router.use("/transaction", transactionRoutes);
 router.use("/bill", billRoutes);
 
+
+app.use('/FUSE', router);
+
 app.use((err, req, res, next) => {
   handleError(err, res, req);
 });
-
-app.use('/FUSE', router);
 
 // List all endpoints of the app
 // const listRoutes = require('express-list-routes');
