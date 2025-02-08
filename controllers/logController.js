@@ -48,7 +48,7 @@ async function logServerError(req, res, message) {
     endpoint: req.originalUrl,
     body: JSON.stringify(requestBody),
     status: 0,
-    message
+    message: message.toString()
   };
 
   if (userId) {

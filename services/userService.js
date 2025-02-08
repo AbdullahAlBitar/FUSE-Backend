@@ -2,7 +2,6 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const bcrypt = require('bcrypt');
 
-
 async function findAll() {
   return await prisma.users.findMany({
     where: {
@@ -121,7 +120,7 @@ async function create(name, role, email, phone, birth, password) {
   const salt = await bcrypt.genSalt();
   password = await bcrypt.hash(password, salt);
 
-  return await prisma.users.create({
+  const newUser = await prisma.users.create({
     data: { name, role, email, phone, birth: (new Date(birth)).toISOString(), password },
     select: {
       id: true,
@@ -132,6 +131,8 @@ async function create(name, role, email, phone, birth, password) {
       role: true
     }
   });
+
+  return newUser;
 }
 
 async function findByEmail(email) {

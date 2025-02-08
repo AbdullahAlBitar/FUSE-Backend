@@ -57,6 +57,7 @@ const signUpSchemaEmployee = Joi.object({
 const signInSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().required(),
+  AESkey: Joi.required()
 });
 
 // Account

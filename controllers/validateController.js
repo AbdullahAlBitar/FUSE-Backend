@@ -14,7 +14,7 @@ async function checkEmpty(parameter, paramName) {
     error.meta = { error: `Empty parameter`, paramName };
     throw error;
   }
-  return parameter.trim();
+  return parameter.toString().trim();
 }
 
 module.exports = {
