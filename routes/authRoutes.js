@@ -7,10 +7,10 @@ const { authenticateJWT } = require('../middleware/authMiddleware');
 const { isAdmin } = require('../middleware/authRole');
 const { decryptRequest, encryptResponse, decryptRSA } = require('../middleware/encryptionMiddleware');
 
-router.post('/login', decryptRequest, encryptResponse, validateRequest(signInSchema), authController.login);
+router.post('/login', decryptRSA, validateRequest(signInSchema), authController.login);
 router.post('/register', decryptRSA, validateRequest(signUpSchema), authController.register);
 
-router.post('/dashboard/login', decryptRequest, encryptResponse, validateRequest(signInSchema), authController.loginDashboard);
+router.post('/dashboard/login', decryptRSA, validateRequest(signInSchema), authController.loginDashboard);
 router.post('/register/employee', authenticateJWT, isAdmin, decryptRequest, encryptResponse, validateRequest(signUpSchemaEmployee), authController.registerEmployee);
 
 router.get('/logout', authController.logout);

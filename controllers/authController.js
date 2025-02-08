@@ -10,6 +10,7 @@ const customerService = require('../services/customerService');
 
 const { revokedTokens } = require('../middleware/authMiddleware');
 const { logServer } = require('./logController');
+const { saveAESKey } = require('../middleware/keysDB/keysDB');
 
 const secretKey = process.env.JWT_SECRET;
 const maxAge = 30 * 60 * 1000;
@@ -21,7 +22,7 @@ async function register(req, res, next) {
     const { monthlyIncome } = req.body;
 
     const newUser = await userService.create(name, role, email, phone, birth, password);
-    const account = await accountService.create(newUser.id, 0, "Checking");
+    const account = await accountService.create(newUser.id, "0", "Checking");
 
     try {
       if (role === "Merchant") {
@@ -66,14 +67,17 @@ async function registerEmployee(req, res, next) {
 
 async function login(req, res, next) {
   try {
-    const { email, password } = req.body;
+    const { email, password, AESkey } = req.body;
 
     const user = await authService.emailLogin(email, password);
+
+    const userAccounts = await accountService.findCheckingById(user.id);
+
+    await saveAESKey(user.id, AESkey);
 
     const token = jwt.sign({ id: user.id, role: user.role }, secretKey, { expiresIn: '30m' });
     res.cookie("jwt", token, { httpOnly: true, maxAge: maxAge });
 
-    userAccounts = await accountService.findCheckingById(user.id);
 
     await logServer(req, res); 
     return res.json({ jwt: token, user, userAccounts });

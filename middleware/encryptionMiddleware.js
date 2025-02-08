@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const { getAESKey } = require('./keysDB/keysDB');
+const userService = require('../services/userService')
 
 const ALGORITHM = 'aes-256-cbc';
 
@@ -46,25 +47,32 @@ function encryptResponse(req, res, next) {
 }
 
 async function decryptRSA(req, res, next) {
-  const { encryptedBody } = req.body;
-  const privateKey = process.env.RSA_PRIVATE_KEY;
-
-  const user = await userService.findByEmail(email);
-
   try {
-      const decryptedBuffer = crypto.privateDecrypt(
-          {
-              key: privateKey,
-              padding: crypto.constants.RSA_PKCS1_PADDING,
-          },
-          Buffer.from(encryptedAESKey, 'base64')
-      );
+    const { encryptedBody } = req.body;
+    if (!encryptedBody) {
+      return res.status(400).json({ error: 'Missing encrypted body' });
+    }
 
-      const decryptedMessage = decryptedBuffer.toString('utf8');
-      req.body = JSON.parse(decryptedMessage);
+    const privateKey = process.env.RSA_PRIVATE_KEY.replace(/\\n/g, '\n');
+
+    const decryptedBuffer = crypto.privateDecrypt(
+      {
+        key: privateKey,
+        padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+        oaepHash: "sha256",
+      },
+      Buffer.from(encryptedBody, 'base64')
+    );
+
+    req.body = JSON.parse(decryptedBuffer.toString('utf8'));
+    next();
   } catch (error) {
-      res.status(400).json({ error: 'Decryption failed' });
+    console.error('RSA Decryption Error:', error);
+    res.status(400).json({ error: 'Decryption failed' });
   }
 }
+
+module.exports = decryptRSA;
+
 
 module.exports = { decryptRequest, encryptResponse, decryptRSA };

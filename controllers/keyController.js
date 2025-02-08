@@ -3,7 +3,7 @@ const { saveAESKey } = require('../middleware/keysDB/keysDB');
 
 async function publicKey(req, res) {
   const publicKey = process.env.RSA_PUBLIC_KEY;
-  res.json({ publicKey });
+  res.json({ publicKey: publicKey });
 }
 
 async function setAESKey(req, res) {
