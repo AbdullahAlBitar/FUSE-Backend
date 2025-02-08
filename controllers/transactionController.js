@@ -3,7 +3,7 @@ const cashTransactionService = require('../services/cashTransactionService');
 const merchantService = require('../services/merchantService');
 const accountService = require('../services/accountService');
 const { handleError } = require('../middleware/errorMiddleware');
-const validate = require('./validateController').default;
+const validate = require('./validateController');
 const { logServer } = require('./logController');
 
 async function index(req, res, next) {

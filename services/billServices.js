@@ -1,6 +1,6 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
-const validate = require('../middleware/validationMiddleware').default;
+const validate = require('../middleware/validationMiddleware');
 const merchantService = require('./merchantService');
 const accountService = require('./accountService');
 const cardService = require('./cardService');

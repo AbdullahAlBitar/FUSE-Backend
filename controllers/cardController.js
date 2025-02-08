@@ -1,6 +1,6 @@
 const cardService = require("../services/cardService");
 const accountService = require("../services/accountService");
-const validate = require("./validateController").default;
+const validate = require("./validateController");
 const { makePayload } = require("../middleware/encryptionMiddleware");
 const { logServer } = require('./logController');
 

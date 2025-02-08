@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const validate = require('../controllers/validateController').default;
+const validate = require('../controllers/validateController');
 
 async function findAll() {
   return await prisma.accounts.findMany({

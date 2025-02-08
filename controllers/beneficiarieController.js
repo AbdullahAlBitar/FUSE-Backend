@@ -1,6 +1,6 @@
 const beneficiarieService = require('../services/beneficiarieService');
 const { handleError } = require('../middleware/errorMiddleware');
-const validate = require('./validateController').default;
+const validate = require('./validateController');
 const { logServer } = require('./logController'); // Import the logServer function
 
 async function index(req, res, next) {
