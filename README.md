@@ -136,15 +136,15 @@ FUSE provides a simple payment gateway that can be integrated into merchant syst
    Request body:
    ```json
    {
-     "merchantId": 12345,  // Integer value
-     "amount": 1000,      // Integer value > 0
+     "merchantId": 12345,
+     "amount": 1000,
      "details": "Payment for order #123"
    }
    ```
    Response:
    ```json
    {
-     "billID": 12345  // Integer
+     "billID": 12345  
    }
    ```
 
@@ -162,7 +162,7 @@ FUSE provides a simple payment gateway that can be integrated into merchant syst
    Response:
    ```json
    {
-     "status": "Paid"  // Only consider the payment successful when status is "Paid"
+     "status": "Paid"  
    }
    ```
 
