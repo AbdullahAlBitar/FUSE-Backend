@@ -112,3 +112,64 @@ npx prisma generate
 | POST | `/key/setAESKey` | Set AES key |
 | POST | `/gate/generate/bill` | Generate secure bill |
 | GET | `/gate/check/:id` | Security check |
+
+
+## Payment Gateway Integration Guide
+
+FUSE provides a simple payment gateway that can be integrated into merchant systems. The gateway endpoints are not encrypted for ease of use, unlike other API endpoints.
+
+### Prerequisites
+- You must have a registered merchant account in F.U.S.E.
+- You need your merchant ID from your profile
+
+### Integration Steps
+
+1. **Get Your Merchant ID**
+   - Log in to your FUSE merchant account
+   - Navigate to your profile
+   - Note your merchant ID (integer value)
+
+2. **Generate a Bill**
+   ```http
+   POST {your_backend_host}/gate/generate/bill
+   ```
+   Request body:
+   ```json
+   {
+     "merchantId": 12345,  // Integer value
+     "amount": 1000,      // Integer value > 0
+     "details": "Payment for order #123"
+   }
+   ```
+   Response:
+   ```json
+   {
+     "billID": 12345  // Integer
+   }
+   ```
+
+3. **Redirect to Payment Page**
+   - Redirect your users to:
+   ```
+   {your_payment_dashboard_host}/:billID
+   ```
+   - Replace `:billID` with the ID received in step 2
+
+4. **Check Payment Status**
+   ```http
+   GET {your_backend_host}/gate/check/:billID
+   ```
+   Response:
+   ```json
+   {
+     "status": "Paid"  // Only consider the payment successful when status is "Paid"
+   }
+   ```
+
+### Important Notes
+- The merchantId must be an integer
+- The amount must be a positive integer
+- Gateway endpoints are not encrypted, making them easier to integrate
+- Only process orders when you receive a "Paid" status
+
+
