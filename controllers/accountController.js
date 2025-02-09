@@ -55,7 +55,7 @@ async function store(req, res, next) {
     const userId = req.user.id;
     const { type } = req.body;
 
-    const newAccount = await accountService.create(userId, 0, type);
+    const newAccount = await accountService.create(userId, "0", type);
 
     await logServer(req, res);
 

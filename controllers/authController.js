@@ -48,7 +48,7 @@ async function registerEmployee(req, res, next) {
     const { name, email, phone, birth, password } = req.body;
 
     const newUser = await userService.create(name, "Employee", email, phone, birth, password);
-    const account = await accountService.create(newUser.id, 0, "Checking");
+    const account = await accountService.create(newUser.id, "0", "Checking");
 
     if (newUser && account) {
       console.log("New Employee created successfully ID", newUser.id);
