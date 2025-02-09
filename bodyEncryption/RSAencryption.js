@@ -13,7 +13,7 @@ J+YgrQZowXBEqogtl63gnG1Mmuh5EAnD1d7+49bdNftcVgip6FPFjCC6nbuRQQGu
 l3lYhOoHBXN9Xa97czlkyP3zCfta7guKxRbu+xH5oeaiwdJlMYqDMq/VpntgiQEc
 2tg6KmayC7RuwrhUdj2O8ZiLHWEcf3hPpHwzzlli8jazNseYfGc4cGmRsg7uUoXG
 aRn8KlIV90UKML+ZM+PX2gkCAwEAAQ==
------END PUBLIC KEY-----`;
+-----END PUBLIC KEY-----`; // set public key
 
 const aesKey = crypto.randomBytes(32).toString("base64");
 
