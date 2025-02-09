@@ -4,10 +4,10 @@ const userService = require('../services/userService')
 
 const ALGORITHM = 'aes-256-cbc';
 
-function decryptRequest(req, res, next) {
+async function decryptRequest(req, res, next) {
   const { iv, encryptedData } = req.body;
 
-  const SHARED_KEY = getAESKey(req.user.id);
+  const SHARED_KEY = await getAESKey(req.user.id);
   const decipher = crypto.createDecipheriv(
     ALGORITHM,
     Buffer.from(SHARED_KEY, 'base64'),
@@ -21,9 +21,9 @@ function decryptRequest(req, res, next) {
   next();
 }
 
-function encryptResponse(req, res, next) {
+async function encryptResponse(req, res, next) {
   const originalJson = res.json;
-  const SHARED_KEY = getAESKey(req.user.id);
+  const SHARED_KEY = await getAESKey(req.user.id);
 
   res.json = function (data) {
     const iv = crypto.randomBytes(16);

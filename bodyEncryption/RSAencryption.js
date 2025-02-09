@@ -15,7 +15,7 @@ l3lYhOoHBXN9Xa97czlkyP3zCfta7guKxRbu+xH5oeaiwdJlMYqDMq/VpntgiQEc
 aRn8KlIV90UKML+ZM+PX2gkCAwEAAQ==
 -----END PUBLIC KEY-----`;
 
-const aesKey = crypto.randomBytes(32).toString("hex");
+const aesKey = crypto.randomBytes(32).toString("base64");
 
 console.log("Generated AES Key:", aesKey);
 
